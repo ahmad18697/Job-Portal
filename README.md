@@ -1,6 +1,9 @@
 # 💼 Job Portal App
 
-A modern full-stack **MERN-based Job Portal** connecting job seekers (students) and recruiters. With smooth animations, a responsive interface, and role-based dashboards, the platform enables easy job postings, applications, and tracking.
+🌐 **Live Demo:** [https://job-portal-git-main-ahmadraza993432-gmailcoms-projects.vercel.app/](https://job-portal-git-main-ahmadraza993432-gmailcoms-projects.vercel.app/)
+
+A modern **full-stack MERN-based Job Portal** that connects **job seekers (students)** and **recruiters**.  
+Featuring smooth animations, a fully responsive interface, and **role-based dashboards**, the platform enables seamless **job posting, application management, and tracking** — all in one place.
 
 ---
 
