@@ -17,44 +17,48 @@ connectDB()
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://job-portal-theta-beryl.vercel.app',
-    'https://job-portal-git-main-ahmadraza993432-gmailcoms-projects.vercel.app',
-    'https://job-portal-ahmadraza993432-gmailcom.vercel.app',
-    'https://job-portal.vercel.app',
-    'https://job-portal-*.vercel.app'
-];
-
+// For development - allow all origins
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow all origins for now
+        // In production, you should replace this with your actual frontend URLs
+        callback(null, true);
+        
+        // For production, you can use something like this:
+        /*
+        const allowedOrigins = [
+            'http://localhost:5173',
+            'https://job-portal-theta-beryl.vercel.app',
+            'https://job-portal-git-main-ahmadraza993432-gmailcoms-projects.vercel.app',
+            'https://job-portal-ahmadraza993432-gmailcom.vercel.app',
+            'https://job-portal.vercel.app',
+            /^\.*vercel\.app$/,  // All vercel subdomains
+            /^https?:\/\/localhost(:\d+)?$/  // All localhost ports
+        ];
+        
         if (!origin) return callback(null, true);
         
-        // Check if the origin matches any of the allowed patterns
-        const isAllowed = allowedOrigins.some(allowedOrigin => {
-            // For wildcard domains
-            if (allowedOrigin.includes('*')) {
-                const regex = new RegExp(allowedOrigin.replace('*', '.*'));
-                return regex.test(origin);
+        if (allowedOrigins.some(pattern => {
+            if (typeof pattern === 'string') {
+                return origin === pattern || 
+                       origin.startsWith(pattern.replace('https://', 'http://'));
+            } else if (pattern instanceof RegExp) {
+                return pattern.test(origin);
             }
-            return origin === allowedOrigin || 
-                   origin.startsWith(allowedOrigin.replace('https://', 'http://'));
-        });
-        
-        if (isAllowed) {
+            return false;
+        })) {
             return callback(null, true);
         }
         
         console.log('Blocked by CORS:', origin);
-        const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-        return callback(new Error(msg), false);
+        return callback(new Error('Not allowed by CORS'));
+        */
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar', 'Authorization'],
-    optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-access-token'],
+    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar', 'Authorization', 'x-access-token'],
+    optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions));
 
