@@ -46,6 +46,13 @@ const PostJob = () => {
 
     const postNewJob = async (e) => {
         e.preventDefault();
+
+        // Frontend Validation
+        if (!input.title || !input.description || !input.requirements || !input.salary || !input.location || !input.jobType || !input.experience || !input.position || !input.companyId) {
+            toast.error("Please fill all fields and select a company.");
+            return;
+        }
+
         try {
             setLoading(true);
             const response = await axios.post(`${JOB_API_END_POINT}/post`, input, {
@@ -61,7 +68,7 @@ const PostJob = () => {
             }
         } catch (error) {
             console.log(error)
-            toast.error(error.response.data.message)
+            toast.error(error.response?.data?.message || "Failed to post job");
         } finally {
             setLoading(false);
         }
@@ -207,7 +214,7 @@ const PostJob = () => {
                     {
                         companies.length === 0 &&
                         <p className='text-sm text-red-600 font-bold text-center my-3 hover:text-fuchsia-600 hover:cursor-pointer hover:scale-105 transition-all ' onClick={() => navigate("/admin/companies/create")}>
-                            *Please a register a company first
+                            *Please register a company first
                         </p>
                     }
 

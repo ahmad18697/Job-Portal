@@ -28,6 +28,10 @@ const authUser = async (req, res, next) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(401).json({
+            message: "Authentication failed",
+            success: false,
+        });
     }
 }
 

@@ -37,44 +37,63 @@ export const postJob = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 
 
 // role === "student"
-
 export const getAllJobs = async (req, res) => {
     try {
-        const keyword = req.query.keyword || "";
-        const query = {
-            $or: [
-                { title: { $regex: keyword, $options: "i" } },
-                { description: { $regex: keyword, $options: "i" } },
-            ]
-        };
+        const { keyword, location, industry, salary, page = 1, limit = 10 } = req.query;
+        let query = {};
 
-        const jobs = await Job.find(query).populate({
-            path: "company"
-        }).sort({ createdAt: -1 });
-
-        // we can use more than two populate at a time
-
-        if (!jobs) {
-            return res.status(404).json({
-                message: "No jobs found",
-                success: false,
-            })
+        if (keyword) {
+            query.$text = { $search: keyword };
         }
 
-        return res.status(200).json({
-            message: "",
-            jobs,
-            success: true,
-        })
+        if (location) {
+            // Adjust to case-insensitive regex for location
+            query.location = { $regex: location, $options: "i" };
+        }
 
+        if (industry) {
+            query.title = { $regex: industry, $options: "i" };
+        }
+
+        if (salary) {
+            // Salary ranges are string values like "6-10 LPA" or "100+" from frontend FilterCard
+            query.salary = { $gte: parseInt(salary.split('-')[0]) || parseInt(salary) };
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const jobs = await Job.find(query)
+            .populate({ path: "company" })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const totalJobs = await Job.countDocuments(query);
+
+        return res.status(200).json({
+            message: "Jobs fetched successfully",
+            jobs,
+            totalJobs,
+            totalPages: Math.ceil(totalJobs / limit),
+            currentPage: parseInt(page),
+            success: true,
+        });
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 
@@ -105,6 +124,10 @@ export const getJobById = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 
@@ -117,9 +140,8 @@ export const getRecruiterJobs = async (req, res) => {
         const jobs = await Job.find({ created_by: recruiterId }).populate(
             {
                 path: "company",
-                createdAt: -1,
             }
-        );
+        ).sort({ createdAt: -1 });
         if (!jobs) {
             return res.status(404).json({
                 message: "No jobs found",
@@ -136,6 +158,10 @@ export const getRecruiterJobs = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 

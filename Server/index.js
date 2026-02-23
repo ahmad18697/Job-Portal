@@ -1,7 +1,9 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import cors from "cors";
 import dotenv from "dotenv";
+import { rateLimit } from "express-rate-limit";
 import connectDB from "./utils/db.js";
 import userRouter from "./routes/user.routes.js";
 import companyRouter from "./routes/company.routes.js";
@@ -9,73 +11,63 @@ import jobRouter from "./routes/job.routes.js";
 import applicantionRouter from "./routes/application.routes.js";
 dotenv.config({});
 
+// Fail-Fast: Environment Variable Validation
+const requiredEnvVariables = ["PORT", "MONGODB_URI", "SECRET_KEY"];
+for (const envVar of requiredEnvVariables) {
+    if (!process.env[envVar]) {
+        console.error(`FATAL ERROR: Environment variable ${envVar} is missing. Shutting down...`);
+        process.exit(1);
+    }
+}
+
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+    console.error(err.name, err.message);
+    process.exit(1);
+});
+
 const app = express();
 
-connectDB()
+connectDB();
 
-// middlewares
+// Security Middlewares
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-// For development - allow all origins
 const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow all origins for now
-        // In production, you should replace this with your actual frontend URLs
-        callback(null, true);
-        
-        // For production, you can use something like this:
-        /*
-        const allowedOrigins = [
-            'http://localhost:5173',
-            'https://job-portal-theta-beryl.vercel.app',
-            'https://job-portal-git-main-ahmadraza993432-gmailcoms-projects.vercel.app',
-            'https://job-portal-ahmadraza993432-gmailcom.vercel.app',
-            'https://job-portal.vercel.app',
-            /^\.*vercel\.app$/,  // All vercel subdomains
-            /^https?:\/\/localhost(:\d+)?$/  // All localhost ports
-        ];
-        
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.some(pattern => {
-            if (typeof pattern === 'string') {
-                return origin === pattern || 
-                       origin.startsWith(pattern.replace('https://', 'http://'));
-            } else if (pattern instanceof RegExp) {
-                return pattern.test(origin);
-            }
-            return false;
-        })) {
-            return callback(null, true);
-        }
-        
-        console.log('Blocked by CORS:', origin);
-        return callback(new Error('Not allowed by CORS'));
-        */
-    },
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-access-token'],
-    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar', 'Authorization', 'x-access-token'],
-    optionsSuccessStatus: 200
 }
 app.use(cors(corsOptions));
 
-app.get("/",(req,res)=>{
-    res.send("Welcome to the server");
+// Rate Limiting for Auth Routes to prevent Brute Force Attacks
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 50, // Limit each IP to 50 requests per window
+    message: "Too many login/signup attempts from this IP, please try again after 15 minutes."
+});
+
+app.get("/", (req, res) => {
+    res.send("Welcome to the robust RESTful API API");
 })
 
 const PORT = process.env.PORT || 3000;
 
-
-app.use("/api/v1/user", userRouter);
+app.use("/api/v1/user", authLimiter, userRouter);
 app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/job", jobRouter);
 app.use("/api/v1/application", applicantionRouter);
 
 
-app.listen(PORT, () => {
-    
+const server = app.listen(PORT, () => {
     console.log(`Server running at port ${PORT}`);
-})
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('UNHANDLED REJECTION! 💥 Shutting down...');
+    console.error(err.name, err.message);
+    server.close(() => {
+        process.exit(1);
+    });
+});

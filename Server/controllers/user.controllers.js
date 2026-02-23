@@ -103,7 +103,7 @@ export const login = async (req, res) => {
 
         return res.status(200).cookie("token", token,
             {
-                maxAge: 1 * 24 * 60 * 60 * 1000, 
+                maxAge: 1 * 24 * 60 * 60 * 1000,
                 httpOnly: true,
                 sameSite: 'none',
                 secure: true
@@ -117,6 +117,10 @@ export const login = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 
@@ -132,6 +136,10 @@ export const logout = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 
@@ -203,6 +211,10 @@ export const updateProfile = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 }
 
